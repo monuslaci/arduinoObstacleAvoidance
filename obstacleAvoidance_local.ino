@@ -48,7 +48,28 @@ void loop()
   currentMillis = millis(); //the millis() function in Arduino returns the number of milliseconds since the Arduino began running the current program. It is often used for timing in non-blocking code to perform tasks at specific intervals without using delay(), which would block the program. It overflows approximately every 50 days,
   previousDistance = checkdistance();
   advance();
+  // Check distance every 5 seconds
+  if (currentMillis - previousMillis >= interval)
+  {
+    // Save the current time
+    previousMillis = currentMillis;
 
+    // Code to execute every 5 seconds
+    float currentDistance = checkdistance();
+    Serial.print("Current distance: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+    if (currentDistance == previousDistance && (currentDistance < 3 || currentDistance > 390))
+    {
+    previousDistance = currentDistance;
+    back();
+    Set_Speed(speed);
+    delay(2000);
+    turnLeft();
+    advance();
+    }
+
+  }
 }
 
 void advance()
@@ -76,31 +97,22 @@ void advance()
     advance();
   }
   
-  // Check distance every 5 seconds
-if (currentMillis - previousMillis >= interval)
-  {
-// Save the current time
-previousMillis = currentMillis;
-
-// Code to execute every 5 seconds
-float currentDistance = checkdistance();
-Serial.print("Current distance: ");
-Serial.print(distance);
-Serial.println(" cm");
-    if (currentDistance == previousDistance )
-    {
-
-    back();
-    Set_Speed(speed);
-    delay(2000);
-     turnLeft();
-    advance();
-    }
-
-  }
+  
 }
 
+int assessSituation()
+{
+  var rightDist = checkSide(0);
+  var leftDist = checkSide(0);
+  if (rightDist < 15 && leftDist < 15 || rightDist > 390 && leftDist > 390)
+  {
+    back();
+    Set_Speed(speed);
+    delay(1000);
+    assessSituation();
+  }
 
+}
 
 void goForward()
 {
