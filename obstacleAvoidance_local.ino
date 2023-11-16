@@ -6,7 +6,11 @@ Servo myservo;  // create servo object to control a servo
 int pos = 0; 
 
 //define ultrasonic sensor variables
-long a;
+long a = 0;
+unsigned long currentMillis = 0;
+unsigned long previousMillis = 0;
+unsigned long previousDistance = 0;
+const long interval = 5000;  // Interval in milliseconds (5 seconds)
 
 //define motor driver variables
 int speed = 120;
@@ -40,7 +44,9 @@ void setup() {
 
 void loop() 
 {
-  // put your main code here, to run repeatedly:
+
+  currentMillis = millis(); //the millis() function in Arduino returns the number of milliseconds since the Arduino began running the current program. It is often used for timing in non-blocking code to perform tasks at specific intervals without using delay(), which would block the program. It overflows approximately every 50 days,
+  previousDistance = checkdistance();
   advance();
 
 }
@@ -69,7 +75,31 @@ void advance()
     turnBack();
     advance();
   }
+  
+  // Check distance every 5 seconds
+if (currentMillis - previousMillis >= interval)
+  {
+// Save the current time
+previousMillis = currentMillis;
+
+// Code to execute every 5 seconds
+float currentDistance = checkdistance();
+Serial.print("Current distance: ");
+Serial.print(distance);
+Serial.println(" cm");
+    if (currentDistance == previousDistance )
+    {
+
+    back();
+    Set_Speed(speed);
+    delay(2000);
+     turnLeft();
+    advance();
+    }
+
+  }
 }
+
 
 
 void goForward()
@@ -129,43 +159,42 @@ void Set_Speed(unsigned char pwm) //function of setting speed
 
 void back()    //  going forward
     {
-     digitalWrite(pinRB,LOW);  // making motor move towards right rear
-     digitalWrite(pinRF,HIGH);
-     digitalWrite(pinLB,LOW);  // making motor move towards left rear
-     digitalWrite(pinLF,HIGH); 
+    digitalWrite(pinRB,LOW);  // making motor move towards right rear
+    digitalWrite(pinRF,HIGH);
+    digitalWrite(pinLB,LOW);  // making motor move towards left rear
+    digitalWrite(pinLF,HIGH); 
    
     }
 void turnR()        //turning right(dual wheel)
     {
-     digitalWrite(pinRB,LOW);  //making motor move towards right rear
-     digitalWrite(pinRF,HIGH);
-     digitalWrite(pinLB,HIGH);
-     digitalWrite(pinLF,LOW);  //making motor move towards left front
+    digitalWrite(pinRB,LOW);  //making motor move towards right rear
+    digitalWrite(pinRF,HIGH);
+    digitalWrite(pinLB,HIGH);
+    digitalWrite(pinLF,LOW);  //making motor move towards left front
 
     }
 void turnL()         //turning left(dual wheel)
     {
-     digitalWrite(pinRB,HIGH);
-     digitalWrite(pinRF,LOW );   //making motor move towards right front
-     digitalWrite(pinLB,LOW);   //making motor move towards left rear
-     digitalWrite(pinLF,HIGH);
+    digitalWrite(pinRB,HIGH);
+    digitalWrite(pinRF,LOW );   //making motor move towards right front
+    digitalWrite(pinLB,LOW);   //making motor move towards left rear
+    digitalWrite(pinLF,HIGH);
     
     }    
 void stopp()        //stop
     {
-     digitalWrite(pinRB,HIGH);
-     digitalWrite(pinRF,HIGH);
-     digitalWrite(pinLB,HIGH);
-     digitalWrite(pinLF,HIGH);
+    digitalWrite(pinRB,HIGH);
+    digitalWrite(pinRF,HIGH);
+    digitalWrite(pinLB,HIGH);
+    digitalWrite(pinLF,HIGH);
     
     }
 void forward()         //back up
     {
-     digitalWrite(pinRB,HIGH);  //making motor move towards right rear     
-     digitalWrite(pinRF,LOW);
-     digitalWrite(pinLB,HIGH);  //making motor move towards left rear
-     digitalWrite(pinLF,LOW);
-      
+    digitalWrite(pinRB,HIGH);  //making motor move towards right rear     
+    digitalWrite(pinRF,LOW);
+    digitalWrite(pinLB,HIGH);  //making motor move towards left rear
+    digitalWrite(pinLF,LOW);     
     }
     
 //ultrasonic sensor related functions
