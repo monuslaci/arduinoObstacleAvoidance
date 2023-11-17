@@ -61,7 +61,7 @@ void loop()
   if (currentMillis - previousMillis >= interval) 
   {
     // Save the current time
-    previousMillis = currentMillis
+    previousMillis = currentMillis;
 
     // Code to execute every 5 seconds
     Serial.print("Current distance: ");
@@ -86,8 +86,8 @@ void loop()
 
 void assessSituation()
 {
-    var rightDist = checkDistanceForDegree(0);
-    var leftDist = checkDistanceForDegree(180);
+    long rightDist = checkDistanceForDegree(0);
+    long leftDist = checkDistanceForDegree(180);
 
     if ( (rightDist < distance && leftDist < distance) || (rightDist > 300 && leftDist > 300))
     {
