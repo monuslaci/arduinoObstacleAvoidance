@@ -7,20 +7,23 @@ int pos = 0;
 
 //define ultrasonic sensor variables
 long a = 0;
-unsigned long currentMillis = 0;
-unsigned long previousMillis = 0;
-unsigned long previousDistance = 0;
-const long interval = 5000;  // Interval in milliseconds (5 seconds)
 
 //define motor driver variables
-int speed = 120;
-int distance = 15;
 #define Lpwm_pin  5     //pin of controlling speed---- ENA of motor driver board
 #define Rpwm_pin  6    //pin of controlling speed---- ENB of motor driver board
 int pinLB=2;             //pin of controlling turning---- IN1 of motor driver board
 int pinLF=4;             //pin of controlling turning---- IN2 of motor driver board
 int pinRB=7;            //pin of controlling turning---- IN3 of motor driver board
 int pinRF=8;            //pin of controlling turning---- IN4 of motor driver board
+
+//define global variables
+unsigned long currentMillis = 0;
+unsigned long previousMillis = 0;
+unsigned long previousDistance = 0;
+unsigned long currentDistance = 0;
+int distance = 15;
+int speed = 120;
+const long interval = 3000;  // Interval in milliseconds (3 seconds)
 
 void setup() {
 // put your setup code here, to run once:
@@ -38,102 +41,107 @@ void setup() {
 //setup ultrasonic
   pinMode(A1, OUTPUT);
   pinMode(A0, INPUT);
-   Serial.begin(9600);
-   delay(1000);
+  Serial.begin(9600);
+  delay(1000);
 }
 
 void loop() 
 {
+    currentMillis = millis(); //the millis() function in Arduino returns the number of milliseconds since the Arduino began running the current program. It is often used for timing in non-blocking code to perform tasks at specific intervals without using delay(), which would block the program. It overflows approximately every 50 days,
+    currentDistance = checkDistanceForDegree(90);
+  
+    goForward();
+    if(checkDistanceForDegree(90)  < distance || checkDistanceForDegree(90)  > 300)
+    {
+        assessSituation();
+    }
 
-  currentMillis = millis(); //the millis() function in Arduino returns the number of milliseconds since the Arduino began running the current program. It is often used for timing in non-blocking code to perform tasks at specific intervals without using delay(), which would block the program. It overflows approximately every 50 days,
-  previousDistance = checkdistance();
-  advance();
-  // Check distance every 5 seconds
-  if (currentMillis - previousMillis >= interval)
+
+  // Check distance every 3 seconds
+  if (currentMillis - previousMillis >= interval) 
   {
     // Save the current time
-    previousMillis = currentMillis;
+    previousMillis = currentMillis
 
     // Code to execute every 5 seconds
-    float currentDistance = checkdistance();
     Serial.print("Current distance: ");
     Serial.print(distance);
     Serial.println(" cm");
+
     if (currentDistance == previousDistance && (currentDistance < 3 || currentDistance > 390))
-    {
-    previousDistance = currentDistance;
-    back();
-    Set_Speed(speed);
-    delay(2000);
-    turnLeft();
-    advance();
+    {  
+        assessSituation();
     }
-
+    // Save the current distance
+    previousDistance = currentDistance;
   }
 }
 
-void advance()
+
+//complex motor controlling functions
+// void advance()
+// {
+
+// }
+
+void assessSituation()
 {
-  goForward();
+    var rightDist = checkDistanceForDegree(0);
+    var leftDist = checkDistanceForDegree(180);
 
-  if (checkSide(180))
-  {
-    turnRight();
-    advance();
-  } 
-  else if (checkSide(0)) //if right is free
-  {
-    turnLeft();
-    advance();
-  } 
-  else if (checkSide(180))
-  {
-    turnLeft();
-    advance();
-  } 
-  else
-  {
-    turnBack();
-    advance();
-  }
-  
-  
-}
-
-int assessSituation()
-{
-  var rightDist = checkSide(0);
-  var leftDist = checkSide(0);
-  if (rightDist < 15 && leftDist < 15 || rightDist > 390 && leftDist > 390)
-  {
-    back();
-    Set_Speed(speed);
-    delay(1000);
-    assessSituation();
-  }
-
+    if ( (rightDist < distance && leftDist < distance) || (rightDist > 300 && leftDist > 300))
+    {
+        back();
+        Set_Speed(speed);
+        delay(1000);
+        stopp();
+        Set_Speed(0);
+        delay(1000);
+        assessSituation();  
+    }
+    if(rightDist > leftDist && rightDist > distance && rightDist < 300)
+    {
+        turnRight();
+        //advance();
+    }
+    if(leftDist > rightDist && leftDist > distance && leftDist < 300)
+    {
+        turnLeft();
+        //advance();
+    }
+    
 }
 
 void goForward()
 {
   myservo.write(90); //set the servo to look in front
-  delay(1000); 
-  while (checkdistance() > distance)
+  delay(100); 
+  long startTime = millis();
+
+  while (checkDistanceForDegree(90) > distance && checkDistanceForDegree(90) < 390 && millis() <= startTime + 2000) //check if we are not too close to the wall, and runs for 1 sec
   {
     forward();
     Set_Speed(speed);
-    delay(500);
+    delay(200);
   }
   stopp();
   Set_Speed(0);
   delay(1000);
 }
 
+//basic motor controlling functions
 bool checkSide(int degree)
 {
-  myservo.write(degree); //and turn the servo in 180 degrees
+  myservo.write(degree); //turn the servo 
   delay(200); 
   return checkdistance() > distance;
+}
+
+long checkDistanceForDegree(int degree)
+{
+  myservo.write(degree); //turn the servo 
+  delay(200); 
+  return checkdistance();
 }
 
 void turnRight()
