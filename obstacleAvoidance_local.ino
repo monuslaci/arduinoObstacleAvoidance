@@ -21,9 +21,12 @@ unsigned long currentMillis = 0;
 unsigned long previousMillis = 0;
 unsigned long previousDistance = 0;
 unsigned long currentDistance = 0;
-int distance = 15;
-int speed = 120;
+int distance = 13;
+int maxDistance = 790;
+int speed = 100;
 const long interval = 3000;  // Interval in milliseconds (3 seconds)
+int backCount = 0;
+bool isStuck = false;
 
 void setup() {
 // put your setup code here, to run once:
@@ -51,13 +54,13 @@ void loop()
     currentDistance = checkDistanceForDegree(90);
   
     goForward();
-    if(checkDistanceForDegree(90)  < distance || checkDistanceForDegree(90)  > 300)
-    {
-        assessSituation();
-    }
+  //   if(checkDistanceForDegree(90)  < distance || checkDistanceForDegree(90)  > maxDistance)
+  //   {
+         assessSituation();
+  //   }
 
 
-  // Check distance every 3 seconds
+  //Check distance every 3 seconds
   if (currentMillis - previousMillis >= interval) 
   {
     // Save the current time
@@ -65,12 +68,16 @@ void loop()
 
     // Code to execute every 5 seconds
     Serial.print("Current distance: ");
-    Serial.print(distance);
-    Serial.println(" cm");
+        Serial.print(currentDistance);
+    Serial.print("Previous distance: ");
+     Serial.print(+previousDistance);
 
-    if (currentDistance == previousDistance && (currentDistance < 3 || currentDistance > 390))
+    if (currentDistance == previousDistance )
     {  
-        assessSituation();
+       Serial.print("Robot is stuck");
+        
+      isStuck = true;
+      assessSituation();
     }
     // Save the current distance
     previousDistance = currentDistance;
@@ -87,29 +94,68 @@ void loop()
 void assessSituation()
 {
     long rightDist = checkDistanceForDegree(0);
+    delay(200); 
+        long forwDist = checkDistanceForDegree(90);
+    delay(200); 
     long leftDist = checkDistanceForDegree(180);
+     delay(200); 
 
-    if ( (rightDist < distance && leftDist < distance) || (rightDist > 300 && leftDist > 300))
+        Serial.print("Right distance: ");
+        Serial.print(rightDist);
+Serial.print("\n\n");
+
+        Serial.print("Left distance: ");
+        Serial.print(leftDist);
+        Serial.print("\n\n");
+
+    // if (backCount >= 3)
+    // {
+    //   backCount = 0;
+    //   if(checkDistanceForDegree(0) > distance )
+    //     turnRight();
+    //   if(checkDistanceForDegree(180) > distance )
+    //     turnLeft();
+    //     break;
+    // }
+    if(backCount == 0 && isStuck == false && forwDist > distance && forwDist < maxDistance )
     {
+      goForward();
+      return;
+    }
+
+    if(rightDist > leftDist && rightDist > distance && rightDist < maxDistance)
+    {
+      Serial.print("turning right");
+        turnRight();
+        backCount = 0;
+        isStuck = false;
+        return;
+        //advance();
+    }
+    if( leftDist > rightDist && leftDist > distance && leftDist < maxDistance)
+    {
+      Serial.print("turning left");
+        turnLeft();
+        backCount = 0;
+        isStuck = false;
+        return;
+        //advance();
+    }
+    if ( ((leftDist < distance && leftDist < distance) || (leftDist > maxDistance && leftDist > maxDistance) || isStuck)  && backCount < 3)
+    {
+      Serial.print("going back");
+       delay(100); 
         back();
         Set_Speed(speed);
         delay(1000);
         stopp();
         Set_Speed(0);
         delay(1000);
-        assessSituation();  
-    }
-    if(rightDist > leftDist && rightDist > distance && rightDist < 300)
-    {
-        turnRight();
-        //advance();
-    }
-    if(leftDist > rightDist && leftDist > distance && leftDist < 300)
-    {
-        turnLeft();
-        //advance();
-    }
-    
+        
+        backCount++;  
+        isStuck = false;
+        assessSituation();
+    }   
 }
 
 void goForward()
@@ -118,15 +164,29 @@ void goForward()
   delay(100); 
   long startTime = millis();
 
-  while (checkDistanceForDegree(90) > distance && checkDistanceForDegree(90) < 390 && millis() <= startTime + 2000) //check if we are not too close to the wall, and runs for 1 sec
+    Serial.print("goForward distance: ");
+     Serial.print(checkDistanceForDegree(90));
+      Serial.print("\n\n");
+ delay(100); 
+
+  if (backCount == 0)
   {
-    forward();
-    Set_Speed(speed);
-    delay(200);
+    while (checkDistanceForDegree(90) > distance && checkDistanceForDegree(90) < maxDistance && millis() <= startTime + 2000) //check if we are not too close to the wall, and runs for 1 sec
+    {
+      Serial.print("goForward distance in while: ");
+      Serial.print(checkDistanceForDegree(90));
+      Serial.print("\n\n");
+
+      forward();
+      Set_Speed(speed);
+      delay(20);
+      
+    }
+    stopp();
+    Set_Speed(0);
+    delay(1000);
+
   }
-  stopp();
-  Set_Speed(0);
-  delay(1000);
 }
 
 //basic motor controlling functions
